@@ -1,4 +1,6 @@
 import os
+import glob
+import datetime
 import pandas as pd
 import streamlit as st
 
@@ -53,36 +55,49 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 2. Sidebar File Upload Section
-st.sidebar.markdown("### 📁 Upload de Dados")
-uploaded_file = st.sidebar.file_uploader(
-    "Carregar arquivo Excel de estoque",
-    type=["xls", "xlsx"],
-    help="Selecione um arquivo Excel contendo as colunas: Modelo, Chassi, Ano, Cor e Status/Estoque."
-)
+# 2. Main File Path & Directory Scan Section
+DATA_DIR = r"c:\Users\Felipe Lamarão\OneDrive\Área de Trabalho\Progresso Pedragon"
 
-# Show welcome landing page if no file is uploaded
-if uploaded_file is None:
+def get_latest_excel_file(folder_path):
+    if not os.path.exists(folder_path):
+        return None
+    # Search for .xls and .xlsx files
+    xls_files = glob.glob(os.path.join(folder_path, "*.xls"))
+    xlsx_files = glob.glob(os.path.join(folder_path, "*.xlsx"))
+    files = xls_files + xlsx_files
+    if not files:
+        return None
+    # Sort files by modification time (most recent first)
+    files.sort(key=os.path.getmtime, reverse=True)
+    return files[0]
+
+latest_file = get_latest_excel_file(DATA_DIR)
+
+# Show error if no file is found
+if latest_file is None:
     st.markdown('<div class="main-title">Painel de Carros em Progresso 🚗</div>', unsafe_allow_html=True)
     st.markdown('<div class="subtitle">Consulta de estoque e classificação de origem de veículos</div>', unsafe_allow_html=True)
     
-    st.info("💡 **Aguardando arquivo...** Por favor, carregue um arquivo Excel (.xls ou .xlsx) no painel lateral à esquerda.")
-    
-    st.markdown("""
-    ### Recursos do Painel:
-    - **Classificação automática:** Origem dos veículos identificada automaticamente (**Próprio** vs **Extra** com base no chassi).
-    - **Filtros interativos:** Filtre e consulte por Modelo, Status, Ano, Cor e Origem.
-    - **Busca rápida:** Encontre veículos por chassi ou modelo instantaneamente.
-    - **Indicadores em tempo real:** Totalizadores de estoque e percentuais por categoria.
-    - **Exportação:** Exporte seus dados filtrados de volta para CSV.
-    """)
+    st.error(f"⚠️ **Nenhum arquivo Excel encontrado!** Certifique-se de colocar arquivos `.xls` ou `.xlsx` na pasta do projeto: `{DATA_DIR}`")
     st.stop()
 
-# Load data with caching
+# Get file info for the sidebar
+file_name = os.path.basename(latest_file)
+file_mtime = os.path.getmtime(latest_file)
+mtime_str = datetime.datetime.fromtimestamp(file_mtime).strftime('%d/%m/%Y %H:%M:%S')
+
+# Show file info in Sidebar
+st.sidebar.markdown("### 📁 Arquivo de Estoque")
+st.sidebar.info(
+    f"**Arquivo Carregado:**\n`{file_name}`\n\n"
+    f"**Última Modificação:**\n`{mtime_str}`"
+)
+
+# Load data with caching (caching key includes path and mtime to detect updates)
 @st.cache_data
-def load_and_prepare_data(file_buffer):
+def load_and_prepare_data(filepath, mtime):
     # Read the file using pandas
-    df = pd.read_excel(file_buffer)
+    df = pd.read_excel(filepath)
     
     # Standardize column headers by stripping whitespace
     df.columns = df.columns.astype(str).str.strip()
@@ -124,9 +139,9 @@ def load_and_prepare_data(file_buffer):
 
 # Load file
 try:
-    df_raw = load_and_prepare_data(uploaded_file)
+    df_raw = load_and_prepare_data(latest_file, file_mtime)
 except Exception as e:
-    st.error(f"Erro ao ler o arquivo Excel carregado: {str(e)}")
+    st.error(f"Erro ao ler o arquivo Excel '{latest_file}': {str(e)}")
     st.stop()
 
 # 4. Sidebar Filters Section
