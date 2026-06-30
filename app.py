@@ -237,7 +237,7 @@ with col_m3:
 st.write("")
 
 # 6. Main Data Table with pandas styling
-st.markdown("### 📊 Estoque de Veículos")
+st.markdown("### 📊 Progresso de Veículos")
 
 def highlight_extra_rows(row):
     # Subtly color rows where Origem is 'Extra'
