@@ -56,7 +56,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 2. Main File Path & Directory Scan Section
-DATA_DIR = r"c:\Users\Felipe Lamarão\OneDrive\Área de Trabalho\Progresso Pedragon"
+DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def get_latest_excel_file(folder_path):
     if not os.path.exists(folder_path):

@@ -3,8 +3,6 @@ __pycache__/
 *.pyc
 .ipynb_checkpoints/
 .streamlit/
-*.xls
-*.xlsx
 *.csv
 .system_generated/
 tasks/
